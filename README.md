@@ -4,7 +4,7 @@
 
 # No To Erasure — 3D Exhibition
 
-*No To Erasure Day* is a project of the American University of Beirut (AUB) Libraries. This virtual exhibition presents 21 works from the project's Primary Documents collection, including artwork, maps, documents, and a short film.
+*No To Erasure Day* is a project of the American University of Beirut (AUB) Libraries. This virtual exhibition presents works from the project's Primary Documents collection, including artwork, maps, documents, and film.
 
 - [Visit the live 3D exhibition](https://mohamad-hk22.github.io/no-to-erasure-expo/)
 - [Read about the AUB Libraries project](https://aub.edu.lb.libguides.com/no-to-erasure/home)
