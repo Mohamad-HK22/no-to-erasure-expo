@@ -4,29 +4,16 @@
   const frame = $('#gallery-frame');
   const dialog = $('#exhibit-dialog');
   const labels = {document: 'Document', image: 'Artwork / map', video: 'Film'};
-  let exhibits = [], activeIndex = 0, currentView = 'gallery', galleryReady = false;
+  let exhibits = [], activeIndex = 0, galleryReady = false;
   let readerFromGallery = false, zoom = 1, pendingExhibit = null;
   let documentPage = 0;
   let fitPageWidth = false;
   let layout = null, mapExpanded = true, currentRoom = null, projectPoint = null;
-  let collectionFilter = 'all';
   function command(command, id) {
     frame.contentWindow?.postMessage({type:'gallery-command', command, id}, location.origin);
   }
   function syncPause() {
-    command(currentView !== 'gallery' || !!document.querySelector('dialog[open]') ? 'pause' : 'resume');
-  }
-  function setView(view) {
-    currentView = view;
-    $('#gallery-view').hidden = view !== 'gallery';
-    $('#collection-view').hidden = view !== 'collection';
-    $('#work-strip').hidden = view !== 'gallery';
-    document.querySelectorAll('.site-header [data-view]').forEach(b => {
-      b.classList.toggle('active', b.dataset.view === view);
-      b.setAttribute('aria-pressed', b.dataset.view === view);
-    });
-    syncPause();
-    if (view === 'gallery') command('resize');
+    command(dialog.open ? 'pause' : 'resume');
   }
   function node(tag, text, className) {
     const e = document.createElement(tag);
@@ -126,7 +113,6 @@
     $('#detail-image').src = e.fullImage || e.image;
     $('#detail-image').alt = e.alt;
     $('#detail-summary').textContent = e.summary;
-    $('#return-label').textContent = currentView === 'gallery' ? 'Back to gallery' : 'Back to collection';
     $('#detail-body').replaceChildren();
     const paragraphs = Array.isArray(e.body) ? e.body : (e.body ? [e.body] : []);
     paragraphs.forEach(s => $('#detail-body').append(node('p',s)));
@@ -161,7 +147,7 @@
     }
     if (!fromGallery) {
       const b = node('button', 'Find this work in the gallery ↗', 'small-button');
-      b.onclick = () => { dialog.close(); setView('gallery'); command('focus', e.id); };
+      b.onclick = () => { dialog.close(); command('focus', e.id); frame.focus(); };
       $('#detail-actions').append(b);
     }
     $('#detail-credit').textContent = e.credit || '';
@@ -175,31 +161,6 @@
     syncPause();
     history.replaceState(null, '', `#work=${encodeURIComponent(e.id)}`);
   }
-  function renderCollection(filter = collectionFilter) {
-    collectionFilter = filter;
-    const query = $('#collection-search').value.trim().toLocaleLowerCase();
-    const room = $('#collection-room').value;
-    const list = $('#collection'); list.replaceChildren();
-    exhibits.forEach((e,i) => {
-      if (filter !== 'all' && e.type !== filter) return;
-      if (room !== 'all' && e.roomId !== room) return;
-      const searchable = [e.title,e.creator,e.sourceId,e.summary,e.collectionTitle,...(e.body || []),...Object.values(e.archival || {})].join(' ').toLocaleLowerCase();
-      if (query && !searchable.includes(query)) return;
-      const card = node('button', undefined, 'work-card');
-      card.type = 'button'; card.setAttribute('aria-label', `${e.title}, ${labels[e.type]}. Open exhibit`);
-      const mat = node('div', undefined, 'image-mat'), img = node('img');
-      img.src = e.image; img.alt = e.alt; img.loading = 'lazy'; mat.append(img);
-      const meta = node('div', undefined, 'card-meta');
-      meta.append(node('span', labels[e.type]), node('span', String(i+1).padStart(2,'0')));
-      card.append(mat, meta, node('h2',e.title), node('p', e.kicker || e.summary));
-      card.onclick = () => showExhibit(e.id); list.append(card);
-    });
-    const count = list.children.length;
-    const message = `${count} ${count === 1 ? 'work' : 'works'} shown`;
-    $('#collection-results').textContent = message;
-    $('#announcement').textContent = message;
-    if (!count) list.append(node('p','No works match these filters. Try another title, creator or area.','empty-collection'));
-  }
   function renderStrip() {
     const list = $('#strip-items'); list.replaceChildren();
     exhibits.forEach(e => {
@@ -207,7 +168,7 @@
       img.src = e.image; img.alt = '';
       b.title = e.title; b.setAttribute('aria-label', `${e.title}, ${labels[e.type]}. Open exhibit`);
       copy.append(node('strong',e.shortTitle || e.title), node('small',labels[e.type]));
-      b.append(img,copy); b.onclick = () => showExhibit(e.id, currentView === 'gallery'); list.append(b);
+      b.append(img,copy); b.onclick = () => showExhibit(e.id, true); list.append(b);
     });
   }
   function svgNode(tag, attrs = {}, text) {
@@ -287,23 +248,17 @@
       });
     }
   }
-  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
-  $('#browse-button').onclick = () => setView('collection');
-  $('.skip').onclick = () => setView('collection');
-  $('#about-button').onclick = () => { $('#about-dialog').showModal(); syncPause(); };
-  document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
-  document.querySelectorAll('dialog').forEach(d => {
-    d.addEventListener('close', () => {
-      if (d === dialog) stopVideo();
-      syncPause();
-      if (d === dialog) history.replaceState(null,'',location.pathname+location.search);
-      if (currentView === 'gallery' && readerFromGallery && !document.querySelector('dialog[open]')) frame.focus();
-    });
-    d.addEventListener('click', ev => {
-      if (ev.target !== d) return;
-      const r = d.getBoundingClientRect();
-      if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) d.close();
-    });
+  $('[data-close]').onclick = () => dialog.close();
+  dialog.addEventListener('close', () => {
+    stopVideo();
+    syncPause();
+    history.replaceState(null,'',location.pathname+location.search);
+    if (readerFromGallery) frame.focus();
+  });
+  dialog.addEventListener('click', ev => {
+    if (ev.target !== dialog) return;
+    const r = dialog.getBoundingClientRect();
+    if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) dialog.close();
   });
   $('#zoom-in').onclick = () => setZoom(zoom+1);
   $('#page-previous').onclick = () => setDocumentPage(documentPage - 1);
@@ -322,12 +277,6 @@
   function help(open) { $('#gallery-help').hidden = !open; $('#help-button').setAttribute('aria-expanded',open); }
   $('#help-button').onclick = () => help($('#gallery-help').hidden);
   $('#help-close').onclick = () => help(false);
-  $('#collection-search').addEventListener('input', () => renderCollection());
-  $('#collection-room').addEventListener('change', () => renderCollection());
-  document.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => {
-    document.querySelectorAll('[data-filter]').forEach(x => { x.classList.toggle('active',x===b); x.setAttribute('aria-pressed',x===b); });
-    renderCollection(b.dataset.filter);
-  });
   frame.addEventListener('load', () => command('request-layout'));
   window.addEventListener('message',ev => {
     if (ev.origin !== location.origin || ev.source !== frame.contentWindow) return;
@@ -343,7 +292,7 @@
     if (data?.type === 'gallery-error' && !galleryReady) {
       const loading = $('#stage-loading');
       loading.querySelector('p').textContent = 'The 3D gallery could not open.';
-      loading.querySelector('span:not(.spinner)').textContent = 'You can still explore every work in the collection.';
+      loading.querySelector('span:not(.spinner)').textContent = 'You can still open the works below the gallery.';
       loading.querySelector('.spinner').hidden = true;
     }
   });
@@ -351,21 +300,18 @@
     if (!r.ok) throw new Error('Content unavailable'); return r.json();
   }).then(data => {
     exhibits = Array.isArray(data) ? data : data.exhibits;
-    const roomChoices = new Map(exhibits.map(e=>[e.roomId,e.collectionTitle]));
-    roomChoices.forEach((title,id)=>{const option=node('option',title);option.value=id;$('#collection-room').append(option);});
-    document.querySelectorAll('[data-work-count]').forEach(el => {
-      const type = el.dataset.workCount;
-      const count = type === 'all' ? exhibits.length : exhibits.filter(e => e.type === type).length;
-      el.textContent = String(count).padStart(2, '0');
-    });
-    renderCollection(); renderStrip();
+    $('#work-count').textContent = String(exhibits.length).padStart(2, '0');
+    renderStrip();
     if (pendingExhibit) { showExhibit(pendingExhibit.id,pendingExhibit.fromGallery); pendingExhibit = null; }
     else { const id = new URLSearchParams(location.hash.slice(1)).get('work'); if (id) showExhibit(id); }
-  }).catch(err => { $('#collection').textContent = 'The exhibition content could not load. Reload this page to try again.'; console.error(err); });
+  }).catch(err => {
+    $('#strip-items').append(node('p', 'The exhibition works could not load. Reload this page to try again.'));
+    console.error(err);
+  });
   setTimeout(() => {
-    if (!galleryReady) {
+    if (!galleryReady && !$('#stage-loading .spinner').hidden) {
       $('#stage-loading').querySelector('p').textContent = 'The rooms are taking a little longer…';
-      $('#stage-loading').querySelector('span:not(.spinner)').textContent = 'You can explore all works in the collection while they load.';
+      $('#stage-loading').querySelector('span:not(.spinner)').textContent = 'You can open the works below while the gallery loads.';
     }
   },20000);
 })();

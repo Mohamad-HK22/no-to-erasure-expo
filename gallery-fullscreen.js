@@ -83,8 +83,4 @@
     if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
     if (event.data && event.data.type === 'gallery-escape') escapeExpandedView();
   });
-  // The loading overlay can still offer the collection while expanded.
-  document.addEventListener('click', function (event) {
-    if (expanded && event.target.closest('[data-view="collection"], #browse-button, .skip')) exit();
-  });
 })();
