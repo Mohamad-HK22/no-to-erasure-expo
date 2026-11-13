@@ -1,0 +1,74 @@
+No To Erasure V1 minimal gallery — OpenVGAL runtime
+
+Upstream project: https://github.com/lbartworks/openvgal
+Retrieved 21 October 2026 from its main-branch ZIP; VERSION reports 4.4.0.
+OpenVGAL copyright (c) 2023 lbartworks, MIT license
+(see licenses/OpenVGAL-MIT.txt).
+
+This package uses the OpenVGAL viewer, its Babylon.js engine, artwork
+builder, navigation and picking, with locally bundled dependencies. Custom
+geometry creates an open gallery with freestanding white display walls.
+The original T_small_B.glb and node materials remain as upstream references.
+
+LOCAL INTEGRATION
+- Scripts, fonts, room files and textures resolve locally. The generator,
+  unused room styles, recorder and external debug-console loader are omitted
+  or disabled.
+- The manifest places works from the AUB Libraries No To Erasure Primary
+  Documents collection in four themed areas. The catalogue retains 21
+  unique records: 14 images, six PDFs (31 pages) and one film. Source credits and stated rights belong to
+  the individual works and are retained with their metadata.
+- demo-rooms.js builds open-plan architecture and supplies the actual wall
+  segments and themed-area boundaries to the live minimap. OpenVGAL still populates artworks, frames
+  and plaques, and handles camera input and artwork picking.
+- V1 architecture uses freestanding white walls with artwork on both sides,
+  a matte oak floor and soft light. Static decoration is merged by material and is
+  non-pickable. Signs and the renderer preserve their proportions when resized.
+- demo-map-stands.js provides eight freestanding tilted map displays. Map
+  surfaces are pickable and retain their original landscape proportions;
+  housings are non-pickable and collision bodies keep walking paths clear.
+- demo-controls.js adds faster movement/look and a held-Shift walking boost,
+  clearing held motion on key release, blur and exhibit inspection.
+- viewer.html loads demo-bridge.js and hides the stock embedded controls.
+  The bridge accepts only messages from its same-origin parent.
+- openvgal-viewer.js uses the bundled Droid Sans font and permits an empty
+  full-room resource for the local geometry extension. The manifest selects
+  the custom geometry through its layout value.
+- Artwork selection emits the matching content ID without moving the camera.
+  Pause clears motion, snapshots the camera pose, detaches camera input and
+  suspends rendering. Resume restores the pose. Repeated pause commands do
+  not overwrite it. Readiness handling covers both loading order and an
+  already completed room.
+- The parent website adds searchable/filterable collection records, a live
+  minimap, image/PDF inspection, original downloads and a local film player.
+  Closing or switching away from a film stops playback. The static host
+  should support byte-range requests for video seeking.
+- gallery-fullscreen.js expands the entire document so the map and sibling
+  exhibit dialogs remain available. It falls back to filling the browser
+  window when native fullscreen is unavailable.
+
+DEPENDENCIES AND NOTICES
+- Babylon.js v8.25.0 and glTF loaders: Apache 2.0; upstream bundled copies.
+  https://github.com/BabylonJS/Babylon.js
+- Earcut v2.1.1: ISC; https://github.com/mapbox/earcut
+- PEP v0.4.3: MIT; https://github.com/jquery/PEP
+- Droid Sans Regular: Apache 2.0; Google/Ascender credits in the font JSON
+  and licenses/DroidSans-Apache-2.0.txt.
+- Reference room/model/material files: MIT-licensed OpenVGAL repository.
+
+CONTENT SOURCE
+https://aub.edu.lb.libguides.com/no-to-erasure/primary-documents
+Collection checked 26 October 2026. Runtime licensing does not change the
+individual works' supplied rights. The catalogue and source inventory retain
+attribution and provenance; original files remain alongside viewing copies.
+
+RUNNING
+Serve the extracted files over HTTPS and use the hosted index.html URL
+in the LibGuides Media/Widget iframe. The gallery, catalogue media, complete document pages and film
+are local. Optional project/source links require internet. Visits are
+independent; there is no shared avatar or live voice server.
+
+VERSION
+V1 is the simpler environment introduced on 28 October 2026. The earlier
+exhibition is preserved separately as V0. Original media and work IDs are
+retained in both versions.
