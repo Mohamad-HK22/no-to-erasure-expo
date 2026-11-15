@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#c15b2f">
   <link rel="icon" type="image/png" href="assets/brand/no-to-erasure-logo.png">
   <link rel="stylesheet" href="app.css?v=shorter-intro">
-  <link rel="stylesheet" href="event-theme.css?v=shorter-intro">
-  <script src="app.js?v=gallery-only" defer></script>
+  <link rel="stylesheet" href="event-theme.css?v=guided-tour">
+  <script src="app.js?v=guided-tour" defer></script>
   <script src="gallery-fullscreen.js?v=gallery-only" defer></script>
 </head>
 <body>
@@ -29,12 +29,22 @@
       <div class="gallery-stage">
         <div class="stage-heading"><span><span class="live-dot"></span> <span id="current-room" title="Entrance">Entrance</span></span><div class="stage-actions"><button id="fullscreen-toggle" class="small-button" aria-pressed="false" title="Explore the gallery in full screen"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span id="fullscreen-label">Full screen</span></button><button id="map-toggle" class="small-button" aria-expanded="true" aria-controls="minimap">Hide map</button><button id="help-button" class="small-button" aria-expanded="false">How to explore <span aria-hidden="true">?</span></button></div></div>
         <div class="frame-wrap">
-          <iframe id="gallery-frame" title="No To Erasure 3D exhibition" src="gallery/viewer.html?embedded=1" allow="fullscreen" loading="eager"></iframe>
+          <iframe id="gallery-frame" title="No To Erasure 3D exhibition" src="gallery/viewer.html?embedded=1&amp;v=guided-tour" allow="fullscreen" loading="eager"></iframe>
           <div id="stage-loading" role="status"><span class="spinner"></span><p>Opening the exhibition…</p><span>You can open the works below while the gallery loads.</span></div>
           <aside id="minimap" aria-label="Exhibition minimap" hidden><div class="map-heading"><strong>EXHIBITION MAP</strong><span><i></i> You are here</span></div><svg id="map-drawing" viewBox="0 0 216 216" role="group" aria-label="Open-plan gallery with four themed areas and an entrance. Choose an area or the entrance."></svg><p>Click an area or the entrance to visit</p></aside>
-          <div id="gallery-help" hidden><strong>Take your time.</strong><p>Drag to look around. Use the arrow keys or W, A, S, D to move. Hold Shift to walk faster. Click any work to open it here. Enlarge an artwork or map, read every page of a document, or play the film. Original files are available from each panel. Close the panel to continue from the same spot.</p><p>Walk around the freestanding walls to explore both sides, or click a themed area on the map to jump there. The map’s arrow follows your position and direction. The eight Nabatieh maps sit on tilted display stands: click a map to inspect its original image.</p><button id="help-close" class="small-button">Got it</button></div>
+          <div id="gallery-help" hidden><strong>Take your time.</strong><p>Drag to look around. Use the arrow keys or W, A, S, D to move. Hold Shift to walk faster. Click any work to open it here. Enlarge an artwork or map, read every page of a document, or play the film. Close the panel to continue from the same spot.</p><p>Choose <b>Take a tour</b> for a guided walk with stops. Select <b>Stop tour</b> or take control of the gallery to explore freely. The arrows below the gallery walk you to the previous or next work. Use the map to jump to an area.</p><button id="help-close" class="small-button">Got it</button></div>
         </div>
-        <div class="gallery-toolbar"><p><span class="toolbar-line"></span> Click a work to open it</p><div><button id="previous-work" aria-label="Approach previous work">←</button><button id="reset-room" class="reset-button">Area start</button><button id="next-work" aria-label="Approach next work">→</button></div></div>
+        <div class="gallery-toolbar">
+          <div class="tour-controls">
+            <button id="tour-toggle" type="button" disabled>Take a tour</button>
+            <p id="walk-status" role="status">Click a work to open it</p>
+          </div>
+          <div class="work-controls" role="group" aria-label="Gallery navigation">
+            <button id="previous-work" type="button" aria-label="Walk to previous work" title="Walk to previous work" disabled>←</button>
+            <button id="reset-room" type="button" class="reset-button">Area start</button>
+            <button id="next-work" type="button" aria-label="Walk to next work" title="Walk to next work" disabled>→</button>
+          </div>
+        </div>
       </div>
     </section>
 

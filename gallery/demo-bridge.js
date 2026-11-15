@@ -7,6 +7,10 @@
   let pendingCommand = null;
   let paused = false;
   let pausedPose = null;
+  let stopWalking = null;
+  let tour = null;
+  const walkSpeed = 3.8;
+  const tourDwell = 4000;
   let lastSelected = { index: -1, at: 0 };
   const origin = location.origin;
   function emit(message) {
@@ -32,6 +36,13 @@
     if (keyboard && Array.isArray(keyboard._keys)) keyboard._keys.length = 0;
     scene.stopAnimation(camera);
     if (typeof stopCinematicVisit === 'function') stopCinematicVisit();
+  }
+  function cancelNavigation() {
+    if (tour) clearTimeout(tour.timer);
+    if (!tour && !stopWalking) return;
+    tour = null;
+    stopWalking?.();
+    emit({type:'walk-status', phase:'stopped'});
   }
   function publishLayout() {
     const layout = window.demoRoomLayout;
@@ -65,6 +76,7 @@
     paused=value;window.demoGalleryPaused=value;
     if (!scene || !scene.activeCamera) return;
     const camera=scene.activeCamera;
+    if (value) cancelNavigation();
     clearMotion();
     if (value) {
       if (!wasPaused || !pausedPose) pausedPose={position:camera.position.clone(),rotation:camera.rotation.clone()};
@@ -87,6 +99,7 @@
     const room=layout && (id==='atrium'?layout.atrium:layout.rooms.find(r=>r.id===id));
     if (!room || !scene || !scene.activeCamera) return;
     if (paused) setPaused(false);
+    cancelNavigation();
     clearMotion();
     const camera=scene.activeCamera, entry=room.entry;
     camera.position.set(entry.x,1.75,entry.z);
@@ -96,20 +109,126 @@
     publishPosition();
     emit({type:'room-entered',id:room.id,title:room.title});
   }
-  function focus(index) {
-    const target=record(index);
-    if (!target || !scene || !scene.activeCamera) return;
-    if (paused) setPaused(false);
+  function walkToWork(index) {
+    const work = record(index);
+    if (!work || paused) return false;
+    const pose = getArtworkPose(work.index);
+    if (!pose) return false;
+    const camera = scene.activeCamera;
+    const route = window.planDemoWalk(window.demoRoomLayout, camera.position, pose.position);
+    const details = {
+      id: work.item.exhibit_id,
+      title: work.item.metadata?.split('\n')[0] || '',
+      tour: !!tour,
+      stop: tour ? tour.index + 1 : 0,
+      total: tour?.stops.length || 0
+    };
+    const report = phase => emit({type:'walk-status', phase, ...details});
+    if (!route) {
+      report('unavailable');
+      return false;
+    }
     clearMotion();
-    manual_navigation_idx=target.index;
-    manual_move();
-    // Keep the visitor at natural eye height while retaining OpenVGAL's pose.
-    const pose=getArtworkPose(target.index);
-    scene.activeCamera.position.y=1.75;
-    if(pose) scene.activeCamera.setTarget(pose.target);
-    if(typeof hideInfoBox==='function') hideInfoBox();
-    publishPosition();
-    emit({type:'exhibit-focused',id:target.item.exhibit_id,index:target.index});
+    manual_navigation_idx = work.index;
+    if (typeof hideInfoBox === 'function') hideInfoBox();
+    report('walking');
+    function arrive() {
+      camera.setTarget(pose.target);
+      publishPosition();
+      report('arrived');
+      if (tour) tour.timer = setTimeout(advanceTour, tourDwell);
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      camera.position.set(pose.position.x, 1.75, pose.position.z);
+      arrive();
+      return true;
+    }
+    // Keep walking at eye height and turn in place at corners. Position is
+    // driven by the collision-checked route instead of by directional input.
+    const radians = angle => Math.atan2(Math.sin(angle), Math.cos(angle));
+    const steps = [];
+    const turn = (fromYaw, fromPitch, yaw, pitch) => {
+      const offset = radians(yaw - fromYaw);
+      const duration = Math.max(Math.abs(offset), Math.abs(pitch - fromPitch)) / 2.8;
+      if (duration < .01) return;
+      steps.push({duration, update(t) {
+        const fraction = t * t * (3 - 2 * t);
+        camera.rotation.set(fromPitch + (pitch - fromPitch) * fraction, fromYaw + offset * fraction, 0);
+      }});
+    };
+    let start = camera.position;
+    let yaw = camera.rotation.y, pitch = camera.rotation.x;
+    for (const end of route) {
+      const dx = end.x - start.x, dz = end.z - start.z;
+      const distance = Math.hypot(dx, dz);
+      if (distance < .001) continue;
+      const heading = Math.atan2(dx, dz);
+      turn(yaw, pitch, heading, 0);
+      const x = start.x, z = start.z;
+      steps.push({duration: distance / walkSpeed, update(t) {
+        camera.position.set(x + dx * t, 1.75, z + dz * t);
+      }});
+      start = end;
+      yaw = heading;
+      pitch = 0;
+    }
+    const dx = pose.target.x - pose.position.x, dz = pose.target.z - pose.position.z;
+    turn(yaw, pitch, Math.atan2(dx, dz), Math.atan2(1.75 - pose.target.y, Math.hypot(dx, dz)));
+    if (!steps.length) {
+      arrive();
+      return true;
+    }
+    camera.detachControl();
+    let elapsed = 0, stepIndex = 0;
+    const observable = scene.onBeforeRenderObservable;
+    const observer = observable.add(() => {
+      elapsed += Math.min(scene.getEngine().getDeltaTime() / 1000, .05);
+      while (stepIndex < steps.length && elapsed >= steps[stepIndex].duration) {
+        const step = steps[stepIndex++];
+        step.update(1);
+        elapsed -= step.duration;
+      }
+      if (stepIndex < steps.length) {
+        const step = steps[stepIndex];
+        step.update(elapsed / step.duration);
+      } else {
+        stopWalking();
+        arrive();
+      }
+    });
+    stopWalking = () => {
+      observable.remove(observer);
+      stopWalking = null;
+      if (!paused) camera.attachControl(canvas, true);
+    };
+    return true;
+  }
+  function advanceTour() {
+    tour.index += 1;
+    if (tour.index === tour.stops.length) {
+      tour = null;
+      emit({type:'walk-status', phase:'finished'});
+    } else if (!walkToWork(tour.stops[tour.index])) {
+      tour = null;
+    }
+  }
+  function startTour() {
+    cancelNavigation();
+    if (paused) return;
+    const works = artworkItems();
+    const stops = [
+      ['homes', 'nte-hvi-002'],
+      ['nature', 'south'],
+      ['heritage', 'nte-pch-map-01'],
+      ['heritage', 'nte-pch-art-002'],
+      ['health', 'healthocide-medical-neutrality']
+    ].map(([roomId, id]) => {
+      const preferred = works.findIndex(item => item.exhibit_id === id);
+      return preferred >= 0 ? preferred : works.findIndex(item => item.room_id === roomId);
+    }).filter(index => index >= 0);
+    if (!stops.length) return;
+    tour = {stops: [...new Set(stops)], index: -1, timer: null};
+    advanceTour();
   }
   function reset() {
     goToRoom('atrium');
@@ -121,17 +240,23 @@
     if(data.command==='resize') {if(window.engine) window.engine.resize();publishPosition();return;}
     if(data.command==='pause') return setPaused(true);
     if(data.command==='resume') return setPaused(false);
+    if(data.command==='stop-tour') return cancelNavigation();
     if(!ready) {pendingCommand=data;return;}
     if(data.command==='reset') return reset();
     if(data.command==='room') return goToRoom(data.id);
     if(data.command==='help') return typeof toggleHelp==='function' && toggleHelp();
+    if(data.command==='start-tour') return startTour();
     if(data.command==='focus') {
       const index=artworkItems().findIndex(item=>item.exhibit_id===data.id);
-      if(index>=0) focus(index);
-    } else if(data.command==='next') {
-      focus(manual_navigation_idx===null?0:manual_navigation_idx+1);
-    } else if(data.command==='previous') {
-      focus(manual_navigation_idx===null?artworkItems().length-1:manual_navigation_idx-1);
+      if (index >= 0) {
+        if (paused) setPaused(false);
+        cancelNavigation();
+        walkToWork(index);
+      }
+    } else if (data.command==='next' || data.command==='previous') {
+      cancelNavigation();
+      const index = data.command==='next' ? (manual_navigation_idx ?? -1) + 1 : (manual_navigation_idx ?? 0) - 1;
+      walkToWork(index);
     }
   }
   window.demoExhibitSelected=function(index) {
@@ -143,7 +268,7 @@
     manual_navigation_idx=target.index;
     // Freeze at the exact clicked pose before the parent opens its inspector.
     // Standalone viewer keeps its original inspection navigation.
-    if(parent===window) {focus(target.index);return;}
+    if(parent===window) {clearMotion();manual_move();return;}
     setPaused(true);
     emit({type:'exhibit-selected',id:target.item.exhibit_id,index:target.index});
   };
@@ -178,8 +303,10 @@
   setInterval(publishPosition,125);
   // Keyboard events in this iframe do not bubble to the page's fallback view.
   window.addEventListener('keydown',function(event){
+    if (/^(Escape|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|[wasd])$/i.test(event.key)) cancelNavigation();
     if(event.key==='Escape') emit({type:'gallery-escape'});
-  });
+  },true);
+  document.getElementById('renderCanvas').addEventListener('pointerdown',cancelNavigation,true);
   window.addEventListener('message',function(event){
     if(event.source!==parent || event.origin!==origin) return;
     const data=event.data;

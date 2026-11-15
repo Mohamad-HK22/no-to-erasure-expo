@@ -39,6 +39,10 @@ h1 em { color: var(--brand); font-style: normal; font-weight: inherit; }
 .gallery-toolbar p { color: #75675b; }
 .gallery-toolbar button { color: #5b4b3d; }
 .gallery-toolbar button:hover { background: var(--brand-pale); color: var(--accent); }
+.gallery-toolbar .tour-controls { flex: 1; min-width: 0; gap: 12px; padding-block: 6px; }
+.gallery-toolbar .work-controls { flex: 0 0 auto; }
+.gallery-toolbar #tour-toggle { flex: 0 0 auto; padding: 5px 10px; border: 1px solid var(--brand); color: var(--accent); font-size: 11px; font-weight: 700; }
+.gallery-toolbar #walk-status { display: block; max-width: none; overflow-wrap: anywhere; }
 .toolbar-line { height: 2px; background: var(--brand); }
 .frame-wrap { background: #e9e2d9; }
 .small-button { border-color: #d0bba9; }
@@ -109,4 +113,6 @@ dialog::backdrop { background: #2a1e17bf; }
   .exhibition-label { font-size: 10px; }
   h1 { font-size: clamp(30px,5.1vw,38px); }
   .exhibition-intro { padding-top: 0; }
+  .gallery-toolbar .tour-controls { flex-wrap: wrap; gap: 4px 8px; }
+  .gallery-toolbar #walk-status { font-size: 9px; }
 }

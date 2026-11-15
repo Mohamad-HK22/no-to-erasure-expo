@@ -3,17 +3,41 @@
   const $ = (s) => document.querySelector(s);
   const frame = $('#gallery-frame');
   const dialog = $('#exhibit-dialog');
+  const tourButton = $('#tour-toggle');
+  const walkStatus = $('#walk-status');
   const labels = {document: 'Document', image: 'Artwork / map', video: 'Film'};
   let exhibits = [], activeIndex = 0, galleryReady = false;
   let readerFromGallery = false, zoom = 1, pendingExhibit = null;
   let documentPage = 0;
   let fitPageWidth = false;
   let layout = null, mapExpanded = true, currentRoom = null, projectPoint = null;
+  let touring = false;
   function command(command, id) {
     frame.contentWindow?.postMessage({type:'gallery-command', command, id}, location.origin);
   }
   function syncPause() {
     command(dialog.open ? 'pause' : 'resume');
+  }
+  function updateWalkStatus(data) {
+    touring = !!data.tour && (data.phase === 'walking' || data.phase === 'arrived');
+    tourButton.textContent = touring ? 'Stop tour' : 'Take a tour';
+    const title = exhibits.find(exhibit => exhibit.id === data.id)?.shortTitle || data.title;
+    switch (data.phase) {
+      case 'walking':
+        walkStatus.textContent = touring ? `Walking to stop ${data.stop} of ${data.total}…` : 'Walking to work…';
+        break;
+      case 'arrived':
+        walkStatus.textContent = touring ? `Stop ${data.stop} of ${data.total} · ${title}` : title || 'Click a work to open it';
+        break;
+      case 'finished':
+        walkStatus.textContent = 'Tour complete. Explore at your own pace.';
+        break;
+      case 'unavailable':
+        walkStatus.textContent = 'No clear route from here. Try another spot.';
+        break;
+      default:
+        walkStatus.textContent = 'Click a work to open it';
+    }
   }
   function node(tag, text, className) {
     const e = document.createElement(tag);
@@ -273,6 +297,10 @@
   $('#previous-work').onclick = () => command('previous');
   $('#next-work').onclick = () => command('next');
   $('#reset-room').onclick = () => currentRoom ? command('room',currentRoom) : command('reset');
+  tourButton.onclick = () => command(touring ? 'stop-tour' : 'start-tour');
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !dialog.open) command('stop-tour');
+  });
   $('#map-toggle').onclick = () => toggleMap(!mapExpanded);
   function help(open) { $('#gallery-help').hidden = !open; $('#help-button').setAttribute('aria-expanded',open); }
   $('#help-button').onclick = () => help($('#gallery-help').hidden);
@@ -283,11 +311,14 @@
     const data = ev.data;
     if (data?.type === 'gallery-ready') {
       galleryReady = true; $('#stage-loading').classList.add('ready');
+      if (data.count > 0) tourButton.disabled = $('#previous-work').disabled = $('#next-work').disabled = false;
       setTimeout(() => $('#stage-loading').hidden = true,450);
       command('request-layout'); syncPause();
     }
     if (data?.type === 'gallery-layout') renderMap(data);
     if (data?.type === 'visitor-position') updatePosition(data);
+    if (data?.type === 'walk-status') updateWalkStatus(data);
+    if (data?.type === 'room-entered') updateWalkStatus({phase:'stopped'});
     if (data?.type === 'exhibit-selected') showExhibit(data.id,true);
     if (data?.type === 'gallery-error' && !galleryReady) {
       const loading = $('#stage-loading');
