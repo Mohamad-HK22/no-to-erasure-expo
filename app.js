@@ -298,9 +298,6 @@
   $('#next-work').onclick = () => command('next');
   $('#reset-room').onclick = () => currentRoom ? command('room',currentRoom) : command('reset');
   tourButton.onclick = () => command(touring ? 'stop-tour' : 'start-tour');
-  window.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !dialog.open) command('stop-tour');
-  });
   $('#map-toggle').onclick = () => toggleMap(!mapExpanded);
   function help(open) { $('#gallery-help').hidden = !open; $('#help-button').setAttribute('aria-expanded',open); }
   $('#help-button').onclick = () => help($('#gallery-help').hidden);

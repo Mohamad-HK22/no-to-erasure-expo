@@ -7,9 +7,11 @@
   const button = document.getElementById('fullscreen-toggle');
   const label = document.getElementById('fullscreen-label');
   const frame = document.getElementById('gallery-frame');
+  const exhibit = document.getElementById('exhibit-dialog');
   const announcement = document.getElementById('announcement');
   let expanded = false;
   let nativeSession = false;
+  let workClosedDuringNativeExit = false;
   let savedScroll = { x: 0, y: 0 };
 
   function updateLayout(value) {
@@ -23,7 +25,7 @@
     announcement.textContent = value ? 'Gallery expanded. Use Exit full screen or Escape to return.' : 'Returned to the exhibition page.';
     requestAnimationFrame(function () {
       frame.contentWindow.postMessage({ type: 'gallery-command', command: 'resize' }, location.origin);
-      if (!document.querySelector('dialog[open]')) {
+      if (!exhibit.open) {
         (expanded ? frame : button).focus({ preventScroll: true });
       }
       if (!expanded) window.scrollTo(savedScroll.x, savedScroll.y);
@@ -66,21 +68,44 @@
       updateLayout(true);
     } else if (!document.fullscreenElement && nativeSession) {
       nativeSession = false;
-      updateLayout(false);
+      // A browser can consume Escape and exit native fullscreen itself.
+      // When a work is open, close it and keep the gallery expanded in-page.
+      if (exhibit.open) exhibit.close();
+      else if (!workClosedDuringNativeExit) updateLayout(false);
+      workClosedDuringNativeExit = false;
     }
     // A nested YouTube fullscreen player should keep the gallery expanded.
   });
 
-  function escapeExpandedView(event) {
-    if (!expanded || document.querySelector('dialog[open]')) return;
-    if (event) event.preventDefault();
-    exit();
+  function stopNavigation() {
+    frame.contentWindow.postMessage({ type: 'gallery-command', command: 'stop-tour' }, location.origin);
   }
-  document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') escapeExpandedView(event);
+  function closeWork() {
+    // If the browser already left native fullscreen, its change event
+    // may still be queued when the work's close request reaches us.
+    workClosedDuringNativeExit = nativeSession && !document.fullscreenElement;
+    exhibit.close();
+  }
+  function handleEscape(event) {
+    if (document.fullscreenElement && document.fullscreenElement !== root) return;
+    event?.preventDefault();
+    if (event?.repeat) return;
+    if (exhibit.open) {
+      closeWork();
+      return;
+    }
+    stopNavigation();
+    if (expanded) exit();
+  }
+  exhibit.addEventListener('cancel', function (event) {
+    event.preventDefault();
+    if (exhibit.open) closeWork();
   });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') handleEscape(event);
+  }, true);
   window.addEventListener('message', function (event) {
     if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
-    if (event.data && event.data.type === 'gallery-escape') escapeExpandedView();
+    if (event.data?.type === 'gallery-escape') handleEscape();
   });
 })();

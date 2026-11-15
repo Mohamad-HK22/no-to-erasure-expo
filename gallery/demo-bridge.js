@@ -303,8 +303,11 @@
   setInterval(publishPosition,125);
   // Keyboard events in this iframe do not bubble to the page's fallback view.
   window.addEventListener('keydown',function(event){
-    if (/^(Escape|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|[wasd])$/i.test(event.key)) cancelNavigation();
-    if(event.key==='Escape') emit({type:'gallery-escape'});
+    if (/^(ArrowUp|ArrowDown|ArrowLeft|ArrowRight|[wasd])$/i.test(event.key)) cancelNavigation();
+    if (event.key === 'Escape' && !event.repeat) {
+      if (parent === window) cancelNavigation();
+      else emit({type:'gallery-escape'});
+    }
   },true);
   document.getElementById('renderCanvas').addEventListener('pointerdown',cancelNavigation,true);
   window.addEventListener('message',function(event){
