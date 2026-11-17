@@ -23,8 +23,10 @@ body { border-top: 4px solid var(--brand); }
 .live-dot { background: var(--brand); }
 .eyebrow { color: var(--accent); letter-spacing: .14em; }
 h1 { font-family: var(--display-font); font-size: clamp(38px,3.55vw,66px); font-weight: 400; line-height: 1.02; letter-spacing: -.012em; text-transform: uppercase; }
-h1 em { color: var(--brand); font-style: normal; font-weight: inherit; }
+h1 em { display: block; color: var(--brand); font-style: normal; font-weight: inherit; }
 .exhibition-intro { padding-top: 23px; }
+.exhibition-dedication { max-width: 32ch; margin: 20px 0 0; color: #625950; font-size: clamp(12px, .85vw, 15px); line-height: 1.7; }
+.exhibition-dedication::before { content: ''; display: block; width: 40px; height: 2px; margin-bottom: 16px; background: var(--brand); }
 .section-number { font-family: var(--display-font); font-size: 43px; color: var(--brand); }
 .text-button { color: var(--accent); border-bottom-color: var(--brand); font-weight: 700; text-decoration: none; }
 .text-button:hover { color: var(--ink); }
@@ -78,6 +80,12 @@ h1 em { color: var(--brand); font-style: normal; font-weight: inherit; }
 .strip-work:hover strong { color: var(--accent); }
 footer { color: #7c6f63; }
 footer a { border-bottom-color: #c8a88e; }
+.exhibition-footer { display: block; }
+.footer-credits { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 520px); align-items: center; gap: clamp(16px, 4vw, 56px); padding: clamp(16px, 2.7vw, 34px); background: var(--surface); border-top: 2px solid var(--brand); }
+.footer-logo { display: block; width: 100%; height: auto; }
+.footer-credits h2 { margin: 0 0 7px; color: var(--accent); font-size: 12px; letter-spacing: .11em; text-transform: uppercase; }
+.footer-credits p { margin: 0; color: #625950; font-size: 13px; line-height: 1.65; }
+.footer-links { padding-top: 12px; text-align: right; font-size: 10px; line-height: 1.6; }
 dialog { background: var(--white); border-color: var(--line); box-shadow: 0 20px 100px #37201433; }
 dialog::backdrop { background: #2a1e17bf; }
 #exhibit-dialog::backdrop { background: #2a1e178a; }
@@ -113,6 +121,13 @@ dialog::backdrop { background: #2a1e17bf; }
   .exhibition-label { font-size: 10px; }
   h1 { font-size: clamp(30px,5.1vw,38px); }
   .exhibition-intro { padding-top: 0; }
+  .exhibition-dedication { max-width: 48ch; margin-top: 12px; }
+  .exhibition-dedication::before { margin-bottom: 10px; }
   .gallery-toolbar .tour-controls { flex-wrap: wrap; gap: 4px 8px; }
   .gallery-toolbar #walk-status { font-size: 9px; }
+}
+@media(max-width:480px) {
+  .footer-credits { grid-template-columns: 1fr; }
+  .footer-logo { width: min(175px, 100%); }
+  .footer-links { text-align: left; }
 }

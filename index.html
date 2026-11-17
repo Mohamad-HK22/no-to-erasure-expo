@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#c15b2f">
   <link rel="icon" type="image/png" href="assets/brand/no-to-erasure-logo.png">
   <link rel="stylesheet" href="app.css?v=shorter-intro">
-  <link rel="stylesheet" href="event-theme.css?v=guided-tour">
+  <link rel="stylesheet" href="event-theme.css?v=mark-and-bear-witness">
   <script src="app.js?v=escape-priority" defer></script>
   <script src="gallery-fullscreen.js?v=escape-priority" defer></script>
 </head>
@@ -23,7 +23,10 @@
   <main id="main">
     <section id="gallery-view" class="gallery-layout" aria-label="Walkable exhibition">
       <aside class="exhibition-intro">
-        <div><p class="eyebrow">NO TO ERASURE</p><h1>What we<br>choose to<br><em>remember.</em></h1></div>
+        <div>
+          <h1>Mark and <em>Bear Witness</em></h1>
+          <p class="exhibition-dedication">To the ongoing erasure of towns and villages in Lebanon, which started on October 16, 2024, and continues into its third year.</p>
+        </div>
         <div class="intro-bottom"><span class="section-number" id="work-count">21</span><p>works to explore<br><span>Art · Maps · Documents · Film</span></p><a href="#work-strip" class="text-button">Browse all works <span aria-hidden="true">↓</span></a><p class="sample-note">From AUB Libraries’ No To Erasure collection.<br>Read, look and watch within the gallery.</p></div>
       </aside>
       <div class="gallery-stage">
@@ -50,7 +53,16 @@
 
     <section id="work-strip" aria-label="Exhibition contents" tabindex="-1"><div class="strip-label"><span class="eyebrow">IN THE EXHIBITION</span><span>Select a work ↗</span></div><div id="strip-items"></div></section>
   </main>
-  <footer><span>NO TO ERASURE</span><span><a href="https://aub.edu.lb.libguides.com/no-to-erasure/primary-documents" target="_blank" rel="noopener noreferrer">AUB Libraries · Primary Documents ↗</a> · Built with <a href="https://github.com/lbartworks/openvgal" target="_blank" rel="noopener noreferrer">OpenVGAL ↗</a></span></footer>
+  <footer id="credits" class="exhibition-footer">
+    <div class="footer-credits">
+      <img class="footer-logo" src="assets/brand/no-to-erasure-logo.png" width="2048" height="790" alt="لا للمحو — No To Erasure — Non à l’effacement" loading="lazy">
+      <div>
+        <h2>Credits</h2>
+        <p>The No to Erasure virtual exhibition was designed by Mohamad Hussein Karnib, a fourth-year Computer Science and Engineering student at the American University of Beirut, under the direction of Dr. Ammar Mohanna.</p>
+      </div>
+    </div>
+    <div class="footer-links"><a href="https://aub.edu.lb.libguides.com/no-to-erasure/primary-documents" target="_blank" rel="noopener noreferrer">AUB Libraries · Primary Documents ↗</a> · Built with <a href="https://github.com/lbartworks/openvgal" target="_blank" rel="noopener noreferrer">OpenVGAL ↗</a></div>
+  </footer>
 </div>
 
 <dialog id="exhibit-dialog" aria-labelledby="exhibit-title"><div class="dialog-top"><span id="detail-kind" class="eyebrow"></span><button class="close-button return-button" data-close aria-label="Close exhibit">Back to gallery <span aria-hidden="true">✕</span></button></div><div class="exhibit-layout"><section id="video-inspector" class="video-visual" aria-label="Watch video in the gallery" hidden><div id="video-player-slot"></div><p class="video-caption"><span id="video-source-label">Film · Available offline</span><span>Close to return to your place in the gallery</span></p></section><div class="detail-visual" id="poster-inspector"><div id="document-toolbar" role="group" aria-label="Document pages" hidden><button id="page-previous" aria-label="Previous document page">←</button><label for="page-select">Page</label><select id="page-select" aria-label="Document page"></select><span id="page-count"></span><button id="page-next" aria-label="Next document page">→</button></div><div class="zoom-toolbar" role="group" aria-label="Page magnification"><span id="zoom-label" aria-live="polite">Fit to view</span><div><button id="zoom-out" aria-label="Zoom out page" disabled>−</button><button id="zoom-fit">Fit</button><button id="zoom-width" aria-label="Fit page to width">Width</button><button id="zoom-in" aria-label="Zoom in page">+</button></div></div><div id="poster-viewport" tabindex="0" aria-label="Artwork, map or document page. Scroll to inspect when enlarged."><button id="full-image" type="button" aria-label="Enlarge page in this panel"><img id="detail-image" alt=""></button></div><p class="zoom-hint">Enlarge to inspect · Scroll to see the details</p></div><div class="detail-copy"><p id="detail-number" class="eyebrow"></p><h2 id="exhibit-title"></h2><p id="detail-summary" class="detail-summary"></p><div id="detail-body"></div><dl id="detail-metadata"></dl><div id="detail-actions"></div><p id="detail-credit" class="credit"></p><div class="detail-navigation"><button id="detail-previous" class="small-button">← Previous</button><span id="detail-position"></span><button id="detail-next" class="small-button">Next →</button></div></div></div></dialog>
